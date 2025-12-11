@@ -1,18 +1,4 @@
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-Obtiene UF, IVP, IPC, UTM, USD->CLP y EUR->CLP desde mindicador.cl,
-entregando un JSON simple con:
-- valor
-- unidad: "Pesos chilenos"
-- fecha: "DD-MM-YYYY"
-
-Requiere: requests
-    pip install requests
-"""
-
 import json
 import datetime as dt
 import requests
