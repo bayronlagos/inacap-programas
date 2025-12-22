@@ -7,7 +7,9 @@ from typing import Optional
 import datetime
 
 load_dotenv()
-
+print(os.getenv("ORACLE_USER"))
+print(os.getenv("ORACLE_PASSWORD"))
+print(os.getenv("ORACLE_DSN"))
 class Database:
     def __init__(self, username, dsn, password):
         self.username = username
@@ -47,7 +49,7 @@ class Database:
         CREATE TABLE USERS (
             id NUMBER PRIMARY KEY,
             username VARCHAR2(32) UNIQUE,
-            password BLOB
+            password VARCHAR2(255)
         )
         """
 
@@ -109,7 +111,7 @@ class Auth:
             print("Usuario no encontrado")
             return False
 
-        hashed_password = resultado[0][0]  
+        hashed_password = resultado[0][0].encode("UTF-8")
 
         if bcrypt.checkpw(password_bytes, hashed_password):
             print("Logeado correctamente")
@@ -122,7 +124,7 @@ class Auth:
     def register(db: Database, id: int, username: str, password: str):
         password_bytes = password.encode("UTF-8")
         salt = bcrypt.gensalt(12)
-        hash_password = bcrypt.hashpw(password_bytes, salt)
+        hash_password = bcrypt.hashpw(password_bytes, salt).decode("UTF-8")
 
         usuario = {
             "id": id,
@@ -136,9 +138,8 @@ class Auth:
         )
         print("Usuario registrado con éxito")
 
-
 class Finance:
-    def __init__(self, base_url: str = "https://mindicador.cl/api"):
+    def _init_(self, base_url: str = "https://mindicador.cl/api"):
         self.base_url = base_url
 
     def get_indicator(self, indicator: str):
@@ -165,45 +166,41 @@ class Finance:
             )
             print("Consulta registrada en Oracle")
 
+# ===== MENÚ DEFINITIVO (DIFERENTE Y GUIADO) =====
 def menu_indicadores(finance, db, usuario):
+    opciones = {
+        "1": ("UF (Unidad de Fomento)", "uf"),
+        "2": ("IVP (Índice de Valor Promedio)", "ivp"),
+        "3": ("IPC (Índice de Precios al Consumidor)", "ipc"),
+        "4": ("UTM (Unidad Tributaria Mensual)", "utm"),
+        "5": ("Dólar Observado", "dolar"),
+        "6": ("Euro", "euro"),
+        "0": ("Salir del sistema", None)
+    }
+
     while True:
         os.system("cls")
-        print("""
-        =========================================
-        |     Menu: Indicadores Económicos      |
-        |---------------------------------------|
-        | 1. Consultar UF                       |
-        | 2. Consultar IVP                      |
-        | 3. Consultar IPC                      |
-        | 4. Consultar UTM                      |
-        | 5. Consultar Dólar                    |
-        | 6. Consultar Euro                     |
-        | 0. Salir                              |
-        =========================================
-        """)
+        print("=== CONSULTA DE INDICADORES ECONÓMICOS ===\n")
 
-        opcion = input("Seleccione una opción: ")
+        for key, value in opciones.items():
+            print(f"{key}. {value[0]}")
 
-        if opcion == "1":
-            finance.consultar_y_guardar("uf", db, usuario)
-        elif opcion == "2":
-            finance.consultar_y_guardar("ivp", db, usuario)
-        elif opcion == "3":
-            finance.consultar_y_guardar("ipc", db, usuario)
-        elif opcion == "4":
-            finance.consultar_y_guardar("utm", db, usuario)
-        elif opcion == "5":
-            finance.consultar_y_guardar("dolar", db, usuario)
-        elif opcion == "6":
-            finance.consultar_y_guardar("euro", db, usuario)
-        elif opcion == "0":
+        print("\n-----------------------------------------")
+        opcion = input("Seleccione el número del indicador: ").strip()
+
+        if opcion == "0":
+            print("\nSesión finalizada.")
             break
+
+        if opcion in opciones:
+            indicador = opciones[opcion][1]
+            finance.consultar_y_guardar(indicador, db, usuario)
         else:
-            print("Opción inválida")
+            print("\nOpción no reconocida.")
 
-        input("\nENTER para continuar...")
+        input("\nPresione ENTER para continuar...")
 
-if __name__ == "__main__":
+if  __name__ == "__main__":
     db = Database(
         username=os.getenv("ORACLE_USER"),
         password=os.getenv("ORACLE_PASSWORD"),
@@ -211,10 +208,8 @@ if __name__ == "__main__":
     )
 
     db.create_tables()
-    Auth.register(db, 1, "C##BAYRON_CID", "Inacap#2025")
+    Auth.register(db, 1, "C##BAYRON_CID", "INACAP#2025")
 
-    if Auth.login(db, "C##BAYRON_CID", "Inacap#2025"):
+    if Auth.login(db, "C##BAYRON_CID", "INACAP#2025"):
         finance = Finance()
         menu_indicadores(finance, db, "C##BAYRON_CID")
-
- 
